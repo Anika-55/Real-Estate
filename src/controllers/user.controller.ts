@@ -5,7 +5,10 @@ import { createResponse } from "../utils/api-response";
 
 interface CreateUserBody {
   email?: string;
-  fullName?: string;
+  name?: string;
+  password?: string;
+  role?: "USER" | "ADMIN" | "AGENT";
+  phone?: string;
 }
 
 export const userController = {
@@ -15,14 +18,13 @@ export const userController = {
   },
 
   create: async (req: Request<unknown, unknown, CreateUserBody>, res: Response): Promise<void> => {
-    const { email, fullName } = req.body;
+    const { email, name, password, role, phone } = req.body;
 
-    if (!email || !fullName) {
-      throw new ApiError(400, "email and fullName are required");
+    if (!email || !name || !password) {
+      throw new ApiError(400, "email, name and password are required");
     }
 
-    const user = await createUser({ email, fullName });
+    const user = await createUser({ email, name, password, role, phone });
     res.status(201).json(createResponse("User created successfully", user));
   },
 };
-

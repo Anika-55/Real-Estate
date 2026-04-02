@@ -3,7 +3,10 @@ import { ApiError } from "../utils/api-error";
 
 export interface CreateUserInput {
   email: string;
-  fullName: string;
+  name: string;
+  password: string;
+  role?: "USER" | "ADMIN" | "AGENT";
+  phone?: string;
 }
 
 export const createUser = async (payload: CreateUserInput) => {
@@ -16,11 +19,19 @@ export const createUser = async (payload: CreateUserInput) => {
   }
 
   return prisma.user.create({
-    data: payload,
+    data: {
+      email: payload.email,
+      name: payload.name,
+      password: payload.password,
+      role: payload.role,
+      phone: payload.phone,
+    },
     select: {
       id: true,
       email: true,
-      fullName: true,
+      name: true,
+      role: true,
+      phone: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -33,10 +44,11 @@ export const getUsers = async () => {
     select: {
       id: true,
       email: true,
-      fullName: true,
+      name: true,
+      role: true,
+      phone: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 };
-
