@@ -1,12 +1,12 @@
 import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 import { env } from "../config/env";
 
-interface AccessTokenPayload {
+export interface AccessTokenPayload {
   sub: string;
   role: "USER" | "ADMIN" | "AGENT";
 }
 
-interface RefreshTokenPayload {
+export interface RefreshTokenPayload {
   sub: string;
   tokenId: string;
 }
@@ -37,3 +37,15 @@ export const verifyRefreshToken = (token: string): RefreshTokenPayload => {
   };
 };
 
+export const verifyAccessToken = (token: string): AccessTokenPayload => {
+  const decoded = jwt.verify(token, env.jwtAccessSecret) as JwtPayload;
+
+  if (!decoded.sub || !decoded.role) {
+    throw new Error("Invalid access token payload");
+  }
+
+  return {
+    sub: decoded.sub,
+    role: decoded.role as AccessTokenPayload["role"],
+  };
+};
