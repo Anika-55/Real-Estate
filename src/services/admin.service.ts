@@ -1,4 +1,4 @@
-import { BookingStatus, UserRole } from "@prisma/client";
+import { BookingStatus, PaymentStatus, UserRole } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { ApiError } from "../utils/api-error";
 
@@ -29,6 +29,25 @@ const paginate = async <T>(args: {
       totalPages: Math.max(1, Math.ceil(total / args.limit)),
       hasNextPage: skip + data.length < total,
     },
+  };
+};
+
+export const getAdminStats = async () => {
+  const [totalUsers, totalProperties, totalBookings, revenueAggregate] = await Promise.all([
+    prisma.user.count(),
+    prisma.property.count(),
+    prisma.booking.count(),
+    prisma.payment.aggregate({
+      where: { status: PaymentStatus.SUCCESS },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  return {
+    totalUsers,
+    totalProperties,
+    totalBookings,
+    totalRevenue: Number(revenueAggregate._sum.amount ?? 0),
   };
 };
 
@@ -148,7 +167,6 @@ export const getAdminProperties = async (options: PaginationInput) => {
   });
 };
 
-
 export const deleteAdminProperty = async (propertyId: string) => {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
@@ -163,6 +181,7 @@ export const deleteAdminProperty = async (propertyId: string) => {
     where: { id: propertyId },
   });
 };
+
 export const getAdminBookings = async (options: PaginationInput & BookingFilters) => {
   return paginate({
     ...options,
@@ -203,5 +222,3 @@ export const getAdminBookings = async (options: PaginationInput & BookingFilters
     countAll: () => prisma.booking.count({ where: options.status ? { status: options.status } : undefined }),
   });
 };
-
-

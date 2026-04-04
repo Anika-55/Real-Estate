@@ -8,6 +8,7 @@ const adminRouter = Router();
 
 adminRouter.use(asyncHandler(protect), authorizeRoles(UserRole.ADMIN));
 
+adminRouter.get("/stats", asyncHandler(adminController.stats));
 adminRouter.get("/users", asyncHandler(adminController.users));
 adminRouter.delete("/users/:id", asyncHandler(adminController.deleteUser));
 adminRouter.patch("/users/:id/role", asyncHandler(adminController.updateUserRole));

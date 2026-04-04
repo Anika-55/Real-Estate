@@ -5,6 +5,7 @@ import {
   deleteAdminUser,
   getAdminBookings,
   getAdminProperties,
+  getAdminStats,
   getAdminUsers,
   updateAdminUserRole,
 } from "../services/admin.service";
@@ -44,6 +45,11 @@ const parseUserRole = (role?: string): UserRole => {
 };
 
 export const adminController = {
+  stats: async (_req: Request, res: Response): Promise<void> => {
+    const stats = await getAdminStats();
+    res.status(200).json(createResponse("Admin stats fetched successfully", stats));
+  },
+
   users: async (req: Request<unknown, unknown, unknown, AdminQuery>, res: Response): Promise<void> => {
     const page = parsePositiveNumber(req.query.page, 1);
     const limit = Math.min(parsePositiveNumber(req.query.limit, 10), 100);
