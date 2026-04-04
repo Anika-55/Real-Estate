@@ -61,7 +61,7 @@ const createTokenPair = async (userId: string, role: UserRole): Promise<TokenPai
     },
   });
 
-  const accessToken = signAccessToken({ sub: userId, role });
+  const accessToken = signAccessToken({ id: userId, role });
 
   return { accessToken, refreshToken };
 };
@@ -181,3 +181,4 @@ export const logout = async (refreshToken: string): Promise<void> => {
     data: { revokedAt: new Date() },
   });
 };
+

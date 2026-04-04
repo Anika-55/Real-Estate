@@ -20,7 +20,7 @@ export const protect = async (req: Request, _res: Response, next: NextFunction):
     throw new ApiError(401, "Access token is required");
   }
 
-  let payload: { sub: string; role: "USER" | "ADMIN" | "AGENT" };
+  let payload: { id: string; role: "USER" | "ADMIN" | "AGENT" };
   try {
     payload = verifyAccessToken(token);
   } catch {
@@ -28,11 +28,10 @@ export const protect = async (req: Request, _res: Response, next: NextFunction):
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: payload.sub },
+    where: { id: payload.id },
     select: {
       id: true,
       email: true,
-      role: true,
       name: true,
       phone: true,
     },
@@ -42,7 +41,10 @@ export const protect = async (req: Request, _res: Response, next: NextFunction):
     throw new ApiError(401, "User no longer exists");
   }
 
-  req.user = user;
+  req.user = {
+    ...user,
+    role: payload.role,
+  };
   next();
 };
 
@@ -59,4 +61,3 @@ export const authorizeRoles =
 
     next();
   };
-
