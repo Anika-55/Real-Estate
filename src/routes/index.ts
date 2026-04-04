@@ -5,6 +5,7 @@ import { authRouter } from "./auth.routes";
 import { propertyRouter } from "./property.routes";
 import { bookingRouter } from "./booking.routes";
 import { adminRouter } from "./admin.routes";
+import { userDashboardRouter } from "./user-dashboard.routes";
 
 const apiRouter = Router();
 
@@ -14,5 +15,6 @@ apiRouter.use("/users", userRouter);
 apiRouter.use("/properties", propertyRouter);
 apiRouter.use("/bookings", bookingRouter);
 apiRouter.use("/admin", adminRouter);
+apiRouter.use("/user", userDashboardRouter);
 
 export { apiRouter };

@@ -1,0 +1,14 @@
+import { Router } from "express";
+import { userDashboardController } from "../controllers/user-dashboard.controller";
+import { protect } from "../middlewares/auth.middleware";
+import { asyncHandler } from "../utils/async-handler";
+
+const userDashboardRouter = Router();
+
+userDashboardRouter.use(asyncHandler(protect));
+
+userDashboardRouter.get("/bookings", asyncHandler(userDashboardController.bookings));
+userDashboardRouter.get("/favorites", asyncHandler(userDashboardController.favorites));
+userDashboardRouter.get("/profile", asyncHandler(userDashboardController.profile));
+
+export { userDashboardRouter };
