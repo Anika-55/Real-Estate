@@ -148,6 +148,21 @@ export const getAdminProperties = async (options: PaginationInput) => {
   });
 };
 
+
+export const deleteAdminProperty = async (propertyId: string) => {
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: { id: true },
+  });
+
+  if (!property) {
+    throw new ApiError(404, "Property not found");
+  }
+
+  await prisma.property.delete({
+    where: { id: propertyId },
+  });
+};
 export const getAdminBookings = async (options: PaginationInput & BookingFilters) => {
   return paginate({
     ...options,
@@ -188,3 +203,5 @@ export const getAdminBookings = async (options: PaginationInput & BookingFilters
     countAll: () => prisma.booking.count({ where: options.status ? { status: options.status } : undefined }),
   });
 };
+
+

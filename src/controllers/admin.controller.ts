@@ -1,6 +1,7 @@
 import { BookingStatus, UserRole } from "@prisma/client";
 import { Request, Response } from "express";
 import {
+  deleteAdminProperty,
   deleteAdminUser,
   getAdminBookings,
   getAdminProperties,
@@ -76,6 +77,11 @@ export const adminController = {
 
     const properties = await getAdminProperties({ page, limit });
     res.status(200).json(createResponse("Admin properties fetched successfully", properties));
+  },
+
+  deleteProperty: async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    await deleteAdminProperty(req.params.id);
+    res.status(200).json(createResponse("Property deleted successfully"));
   },
 
   bookings: async (req: Request<unknown, unknown, unknown, AdminQuery>, res: Response): Promise<void> => {

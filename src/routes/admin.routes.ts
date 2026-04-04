@@ -12,6 +12,7 @@ adminRouter.get("/users", asyncHandler(adminController.users));
 adminRouter.delete("/users/:id", asyncHandler(adminController.deleteUser));
 adminRouter.patch("/users/:id/role", asyncHandler(adminController.updateUserRole));
 adminRouter.get("/properties", asyncHandler(adminController.properties));
+adminRouter.delete("/properties/:id", asyncHandler(adminController.deleteProperty));
 adminRouter.get("/bookings", asyncHandler(adminController.bookings));
 
 export { adminRouter };
