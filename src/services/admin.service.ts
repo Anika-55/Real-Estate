@@ -1,5 +1,6 @@
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus, UserRole } from "@prisma/client";
 import { prisma } from "../config/prisma";
+import { ApiError } from "../utils/api-error";
 
 interface PaginationInput {
   page: number;
@@ -50,6 +51,62 @@ export const getAdminUsers = async (options: PaginationInput) => {
         },
       }),
     countAll: () => prisma.user.count(),
+  });
+};
+
+export const deleteAdminUser = async (userId: string, adminId: string) => {
+  if (userId === adminId) {
+    throw new ApiError(400, "Admin cannot delete own account");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  await prisma.user.delete({
+    where: { id: userId },
+  });
+};
+
+export const updateAdminUserRole = async (userId: string, role: UserRole, adminId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      phone: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (userId === adminId && role !== UserRole.ADMIN) {
+    throw new ApiError(400, "Admin cannot change own role to non-admin");
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: { role },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      phone: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 };
 

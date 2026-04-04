@@ -1,6 +1,12 @@
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus, UserRole } from "@prisma/client";
 import { Request, Response } from "express";
-import { getAdminBookings, getAdminProperties, getAdminUsers } from "../services/admin.service";
+import {
+  deleteAdminUser,
+  getAdminBookings,
+  getAdminProperties,
+  getAdminUsers,
+  updateAdminUserRole,
+} from "../services/admin.service";
 import { ApiError } from "../utils/api-error";
 import { createResponse } from "../utils/api-response";
 
@@ -8,6 +14,10 @@ interface AdminQuery {
   page?: string;
   limit?: string;
   status?: string;
+}
+
+interface UpdateUserRoleBody {
+  role?: string;
 }
 
 const parsePositiveNumber = (value: string | undefined, fallback: number): number => {
@@ -24,6 +34,14 @@ const parseBookingStatus = (status?: string): BookingStatus | undefined => {
   return status;
 };
 
+const parseUserRole = (role?: string): UserRole => {
+  if (role !== UserRole.USER && role !== UserRole.ADMIN && role !== UserRole.AGENT) {
+    throw new ApiError(400, "role must be USER, ADMIN or AGENT");
+  }
+
+  return role;
+};
+
 export const adminController = {
   users: async (req: Request<unknown, unknown, unknown, AdminQuery>, res: Response): Promise<void> => {
     const page = parsePositiveNumber(req.query.page, 1);
@@ -31,6 +49,25 @@ export const adminController = {
 
     const users = await getAdminUsers({ page, limit });
     res.status(200).json(createResponse("Admin users fetched successfully", users));
+  },
+
+  deleteUser: async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    await deleteAdminUser(req.params.id, req.user.id);
+    res.status(200).json(createResponse("User deleted successfully"));
+  },
+
+  updateUserRole: async (req: Request<{ id: string }, unknown, UpdateUserRoleBody>, res: Response): Promise<void> => {
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const role = parseUserRole(req.body.role);
+    const user = await updateAdminUserRole(req.params.id, role, req.user.id);
+    res.status(200).json(createResponse("User role updated successfully", user));
   },
 
   properties: async (req: Request<unknown, unknown, unknown, AdminQuery>, res: Response): Promise<void> => {
