@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import {
   createProperty,
   deleteProperty,
+  getMyProperties,
   getProperties,
   getPropertyById,
   updateProperty,
@@ -65,10 +66,7 @@ const validateCreatePayload = (body: PropertyBody): Required<Omit<PropertyBody, 
   const { title, description, price, type, city, country, address, images, bedrooms, bathrooms, area } = body;
 
   if (!title || !description || typeof price !== "number" || !type || !city || !country || !address || !Array.isArray(images)) {
-    throw new ApiError(
-      400,
-      "title, description, price, type, city, country, address and images[] are required"
-    );
+    throw new ApiError(400, "title, description, price, type, city, country, address and images[] are required");
   }
 
   if (price <= 0) {
@@ -95,6 +93,15 @@ const validateCreatePayload = (body: PropertyBody): Required<Omit<PropertyBody, 
 };
 
 export const propertyController = {
+  getMine: async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const properties = await getMyProperties(req.user.id);
+    res.status(200).json(createResponse("Agent properties fetched successfully", properties));
+  },
+
   create: async (req: Request<unknown, unknown, PropertyBody>, res: Response): Promise<void> => {
     if (!req.user) {
       throw new ApiError(401, "Unauthorized");
@@ -163,4 +170,3 @@ export const propertyController = {
     res.status(200).json(createResponse("Properties fetched successfully", result));
   },
 };
-

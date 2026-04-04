@@ -98,6 +98,14 @@ export const getPropertyById = async (propertyId: string) => {
   return property;
 };
 
+export const getMyProperties = async (ownerId: string) => {
+  return prisma.property.findMany({
+    where: { ownerId },
+    orderBy: { createdAt: "desc" },
+    select: propertySelect,
+  });
+};
+
 export const getProperties = async (options: PropertyQueryOptions) => {
   const skip = (options.page - 1) * options.limit;
 
@@ -195,4 +203,3 @@ export const deleteProperty = async (propertyId: string, actor: Actor) => {
     where: { id: propertyId },
   });
 };
-
