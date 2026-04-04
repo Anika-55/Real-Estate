@@ -8,6 +8,8 @@ const userDashboardRouter = Router();
 userDashboardRouter.use(asyncHandler(protect));
 
 userDashboardRouter.get("/bookings", asyncHandler(userDashboardController.bookings));
+userDashboardRouter.post("/favorites", asyncHandler(userDashboardController.saveFavorite));
+userDashboardRouter.delete("/favorites/:propertyId", asyncHandler(userDashboardController.removeFavorite));
 userDashboardRouter.get("/favorites", asyncHandler(userDashboardController.favorites));
 userDashboardRouter.get("/profile", asyncHandler(userDashboardController.profile));
 
