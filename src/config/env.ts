@@ -15,6 +15,10 @@ interface Env {
   refreshTokenExpiresInDays: number;
   bcryptSaltRounds: number;
   cookieDomain?: string;
+  cloudinaryCloudName: string;
+  cloudinaryApiKey: string;
+  cloudinaryApiSecret: string;
+  cloudinaryFolder: string;
 }
 
 const getNodeEnv = (): NodeEnv => {
@@ -66,4 +70,8 @@ export const env: Env = {
   refreshTokenExpiresInDays: parsePositiveInt(process.env.REFRESH_TOKEN_EXPIRES_DAYS, 7, "REFRESH_TOKEN_EXPIRES_DAYS"),
   bcryptSaltRounds: parsePositiveInt(process.env.BCRYPT_SALT_ROUNDS, 12, "BCRYPT_SALT_ROUNDS"),
   cookieDomain: process.env.COOKIE_DOMAIN,
+  cloudinaryCloudName: required("CLOUDINARY_CLOUD_NAME"),
+  cloudinaryApiKey: required("CLOUDINARY_API_KEY"),
+  cloudinaryApiSecret: required("CLOUDINARY_API_SECRET"),
+  cloudinaryFolder: process.env.CLOUDINARY_FOLDER ?? "realestate/properties",
 };

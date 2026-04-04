@@ -14,15 +14,15 @@ import { createResponse } from "../utils/api-response";
 interface PropertyBody {
   title?: string;
   description?: string;
-  price?: number;
-  type?: PropertyType;
+  price?: number | string;
+  type?: PropertyType | string;
   city?: string;
   country?: string;
   address?: string;
-  images?: string[];
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number;
+  images?: string[] | string;
+  bedrooms?: number | string;
+  bathrooms?: number | string;
+  area?: number | string;
 }
 
 interface PropertyQuery {
@@ -50,6 +50,15 @@ const parseOptionalNumber = (value: string | undefined): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const parseNumberField = (value: unknown, field: string): number | undefined => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new ApiError(400, `${field} must be a valid number`);
+  }
+  return parsed;
+};
+
 const parseType = (type?: string): PropertyType | undefined => {
   if (!type) return undefined;
   if (type !== PropertyType.RENT && type !== PropertyType.SALE) {
@@ -58,23 +67,62 @@ const parseType = (type?: string): PropertyType | undefined => {
   return type;
 };
 
-const validateCreatePayload = (body: PropertyBody): Required<Omit<PropertyBody, "bedrooms" | "bathrooms" | "area">> & {
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number;
-} => {
-  const { title, description, price, type, city, country, address, images, bedrooms, bathrooms, area } = body;
+const parseImagesFromBody = (images: unknown): string[] => {
+  if (!images) return [];
 
-  if (!title || !description || typeof price !== "number" || !type || !city || !country || !address || !Array.isArray(images)) {
-    throw new ApiError(400, "title, description, price, type, city, country, address and images[] are required");
+  if (Array.isArray(images)) {
+    return images.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  }
+
+  if (typeof images === "string") {
+    const trimmed = images.trim();
+    if (!trimmed) return [];
+
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+        }
+      } catch {
+        throw new ApiError(400, "images must be a valid JSON string array");
+      }
+    }
+
+    return trimmed
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  throw new ApiError(400, "images must be an array of strings");
+};
+
+const mergeImageUrls = (bodyImages: unknown, uploadedImages?: string[]): string[] => {
+  const raw = [...parseImagesFromBody(bodyImages), ...(uploadedImages ?? [])];
+  return Array.from(new Set(raw));
+};
+
+const validateCreatePayload = (body: PropertyBody, uploadedImages?: string[]) => {
+  const title = body.title;
+  const description = body.description;
+  const type = parseType(typeof body.type === "string" ? body.type : body.type);
+  const price = parseNumberField(body.price, "price");
+  const bedrooms = parseNumberField(body.bedrooms, "bedrooms");
+  const bathrooms = parseNumberField(body.bathrooms, "bathrooms");
+  const area = parseNumberField(body.area, "area");
+  const images = mergeImageUrls(body.images, uploadedImages);
+
+  if (!title || !description || price === undefined || !type || !body.city || !body.country || !body.address) {
+    throw new ApiError(400, "title, description, price, type, city, country and address are required");
   }
 
   if (price <= 0) {
     throw new ApiError(400, "price must be greater than 0");
   }
 
-  if (!images.every((img) => typeof img === "string")) {
-    throw new ApiError(400, "images must be an array of strings");
+  if (!images.length) {
+    throw new ApiError(400, "At least one image is required");
   }
 
   return {
@@ -82,14 +130,36 @@ const validateCreatePayload = (body: PropertyBody): Required<Omit<PropertyBody, 
     description,
     price,
     type,
-    city,
-    country,
-    address,
+    city: body.city,
+    country: body.country,
+    address: body.address,
     images,
     bedrooms,
     bathrooms,
     area,
   };
+};
+
+const normalizeUpdatePayload = (body: PropertyBody, uploadedImages?: string[]) => {
+  const payload = {
+    title: body.title,
+    description: body.description,
+    price: parseNumberField(body.price, "price"),
+    type: parseType(typeof body.type === "string" ? body.type : body.type),
+    city: body.city,
+    country: body.country,
+    address: body.address,
+    images: body.images !== undefined || (uploadedImages && uploadedImages.length) ? mergeImageUrls(body.images, uploadedImages) : undefined,
+    bedrooms: parseNumberField(body.bedrooms, "bedrooms"),
+    bathrooms: parseNumberField(body.bathrooms, "bathrooms"),
+    area: parseNumberField(body.area, "area"),
+  };
+
+  if (payload.price !== undefined && payload.price <= 0) {
+    throw new ApiError(400, "price must be greater than 0");
+  }
+
+  return payload;
 };
 
 export const propertyController = {
@@ -107,7 +177,7 @@ export const propertyController = {
       throw new ApiError(401, "Unauthorized");
     }
 
-    const payload = validateCreatePayload(req.body);
+    const payload = validateCreatePayload(req.body, req.uploadedImageUrls);
     const property = await createProperty(payload, req.user.id);
     res.status(201).json(createResponse("Property created successfully", property));
   },
@@ -117,22 +187,11 @@ export const propertyController = {
       throw new ApiError(401, "Unauthorized");
     }
 
-    const propertyId = req.params.id;
-    const payload = req.body;
+    const property = await updateProperty(req.params.id, normalizeUpdatePayload(req.body, req.uploadedImageUrls), {
+      id: req.user.id,
+      role: req.user.role,
+    });
 
-    if (payload.price !== undefined && payload.price <= 0) {
-      throw new ApiError(400, "price must be greater than 0");
-    }
-
-    if (payload.type && payload.type !== PropertyType.RENT && payload.type !== PropertyType.SALE) {
-      throw new ApiError(400, "type must be RENT or SALE");
-    }
-
-    if (payload.images && (!Array.isArray(payload.images) || !payload.images.every((img) => typeof img === "string"))) {
-      throw new ApiError(400, "images must be an array of strings");
-    }
-
-    const property = await updateProperty(propertyId, payload, { id: req.user.id, role: req.user.role });
     res.status(200).json(createResponse("Property updated successfully", property));
   },
 

@@ -13,6 +13,7 @@ declare global {
     interface Request {
       requestId?: string;
       user?: AuthUser;
+      uploadedImageUrls?: string[];
     }
   }
 }
