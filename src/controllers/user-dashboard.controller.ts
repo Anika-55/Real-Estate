@@ -1,11 +1,23 @@
 import { Request, Response } from "express";
 import { getUserBookings } from "../services/booking.service";
-import { getUserFavorites, getUserProfile, removeUserFavorite, saveUserFavorite } from "../services/user-dashboard.service";
+import {
+  getUserFavorites,
+  getUserProfile,
+  removeUserFavorite,
+  saveUserFavorite,
+  updateUserProfile,
+} from "../services/user-dashboard.service";
 import { ApiError } from "../utils/api-error";
 import { createResponse } from "../utils/api-response";
 
 interface SaveFavoriteBody {
   propertyId?: string;
+}
+
+interface UpdateProfileBody {
+  name?: string;
+  email?: string;
+  phone?: string;
 }
 
 export const userDashboardController = {
@@ -57,5 +69,17 @@ export const userDashboardController = {
 
     const profile = await getUserProfile(req.user.id);
     res.status(200).json(createResponse("User profile fetched successfully", profile));
+  },
+
+  updateProfile: async (
+    req: Request<unknown, unknown, UpdateProfileBody>,
+    res: Response
+  ): Promise<void> => {
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const profile = await updateUserProfile(req.user.id, req.body);
+    res.status(200).json(createResponse("User profile updated successfully", profile));
   },
 };

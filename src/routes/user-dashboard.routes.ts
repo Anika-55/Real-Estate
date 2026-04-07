@@ -12,5 +12,6 @@ userDashboardRouter.post("/favorites", asyncHandler(userDashboardController.save
 userDashboardRouter.delete("/favorites/:propertyId", asyncHandler(userDashboardController.removeFavorite));
 userDashboardRouter.get("/favorites", asyncHandler(userDashboardController.favorites));
 userDashboardRouter.get("/profile", asyncHandler(userDashboardController.profile));
+userDashboardRouter.patch("/profile", asyncHandler(userDashboardController.updateProfile));
 
 export { userDashboardRouter };
